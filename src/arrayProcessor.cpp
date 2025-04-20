@@ -8,29 +8,30 @@
 #include <mutex>
 
 std::mutex ArrayProcessor::console_mutex;
-
 ArrayProcessor::ThreadResults ArrayProcessor::results;
 
 void ArrayProcessor::ValidateArray(const std::vector<int>& arr) {
     if (arr.empty()) {
-        throw std::runtime_error("Operation on empty array");
+        throw EmptyArrayException(); // Throw exception if array is empty
     }
 }
 
 void ArrayProcessor::FindMinMaxThread(const std::vector<int>& arr) {
     int min = arr[0], max = arr[0];
 
+    // Iterate through the array and calculate min/max values
     for (int num : arr) {
         if (num < min) min = num;
         if (num > max) max = num;
-        std::this_thread::sleep_for(std::chrono::milliseconds(kMinMaxSleepMs));
     }
 
+    // Output min/max values
     {
         std::lock_guard<std::mutex> lock(console_mutex);
         std::cout << "Min: " << min << "\nMax: " << max << std::endl;
     }
 
+    // Store results in the static results struct
     results.min = min;
     results.max = max;
 }
@@ -38,25 +39,28 @@ void ArrayProcessor::FindMinMaxThread(const std::vector<int>& arr) {
 void ArrayProcessor::CalculateAverageThread(const std::vector<int>& arr) {
     double sum = 0;
 
+    // Calculate the sum of the array elements
     for (int num : arr) {
         sum += num;
-        std::this_thread::sleep_for(std::chrono::milliseconds(kAverageSleepMs));
     }
 
+    // Calculate the average and round it
     double average = sum / arr.size();
     int roundedAverage = static_cast<int>(std::round(average));
 
+    // Output the average and the rounded value
     {
         std::lock_guard<std::mutex> lock(console_mutex);
         std::cout << "Average: " << std::fixed << std::setprecision(2) << average
                   << " (rounded to " << roundedAverage << ")" << std::endl;
     }
 
+    // Store the rounded average in the static results struct
     results.average = roundedAverage;
 }
 
 void ArrayProcessor::ProcessArray(std::vector<int>& arr) {
-    ValidateArray(arr);
+    ValidateArray(arr); // Ensure the array is not empty
 
     // Create threads for min/max and average calculations
     std::thread minMaxThread(FindMinMaxThread, std::ref(arr));
@@ -66,10 +70,8 @@ void ArrayProcessor::ProcessArray(std::vector<int>& arr) {
     minMaxThread.join();
     averageThread.join();
 
-    // Modify the array by replacing min and max with the average
+    // Replace all array elements with the rounded average value
     for (int& num : arr) {
-        if (num == results.min || num == results.max) {
-            num = results.average;
-        }
+        num = results.average;
     }
 }
