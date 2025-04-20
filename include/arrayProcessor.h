@@ -12,6 +12,16 @@ public:
     static constexpr int kMinMaxSleepMs = 7;
     static constexpr int kAverageSleepMs = 12;
 
+    class EmptyArrayException : public std::runtime_error {
+    public:
+        EmptyArrayException() : runtime_error("Operation on empty array") {}
+    };
+
+    class InvalidInputException : public std::runtime_error {
+    public:
+        InvalidInputException(const std::string& message) : runtime_error(message) {}
+    };
+
     static void FindMinMaxThread(const std::vector<int>& arr);
     static void CalculateAverageThread(const std::vector<int>& arr);
 
